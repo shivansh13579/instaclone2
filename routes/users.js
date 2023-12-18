@@ -10,6 +10,6 @@ const userModel = mongoose.Schema({
   profileImage: String,
 })
 
-userSchema.plugin(plm);
+userModel.plugin(plm);
 
-module.exports = mongoose.model("user",userSchema);
+module.exports = mongoose.model("user",userModel);
