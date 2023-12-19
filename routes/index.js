@@ -1,7 +1,8 @@
 var express = require('express');
 const passport = require('passport');
 var router = express.Router();
-const userModel = require('./users')
+const userModel = require('./users');
+const postModel = require('./post.js');
 const localStrategy = require('passport-local');
 passport.use(new localStrategy(userModel.authenticate()));
 const upload = require("./multer.js");
@@ -18,16 +19,18 @@ router.get('/feed',isLoggedIn, function(req, res) {
   res.render('feed', {footer: true});
 });
 
-router.get('/profile',isLoggedIn, function(req, res) {
-  res.render('profile', {footer: true});
+router.get('/profile',isLoggedIn,async function(req, res) {
+  const user = await userModel.findOne({username: req.session.passport.user})
+  res.render('profile', {footer: true, user});
 });
 
 router.get('/search',isLoggedIn, function(req, res) {
   res.render('search', {footer: true});
 });
 
-router.get('/edit',isLoggedIn, function(req, res) {
-  res.render('edit', {footer: true});
+router.get('/edit',isLoggedIn,async function(req, res) {
+  const user = await userModel.findOne({username: req.session.passport.user})
+  res.render('edit', {footer: true, user});
 });
 
 router.get('/upload',isLoggedIn ,function(req, res) {
@@ -70,7 +73,7 @@ function isLoggedIn(req,res,next){
   res.redirect("/login");
 }
 
-router.post("/upload",upload.single("image"),async function(req,res,next){
+router.post("/update",upload.single("image"),async function(req,res,next){
     const user = await userModel.findOneAndUpdate({username: req.session.passport.user},
       {username: req.body.username,
        name: req.body.name,
@@ -78,9 +81,20 @@ router.post("/upload",upload.single("image"),async function(req,res,next){
       },
       {new: true}
       );
-      user.profileImage = req.file.filename;
+      if(req.file){
+        user.profileImage = req.file.filename;
+      } 
       await user.save();
       res.redirect("/profile");
 })
+
+router.post("/upload",isLoggedIn,upload.single("image"),async function(req,res){
+    const user = await userModel.findOne({username: req.session.passport.user})
+    const post = await postModel.create({
+      picture: req.file.filename,
+      user: user._id,
+      caption:req.body.caption,
+    })
+});
 
 module.exports = router;

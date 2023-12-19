@@ -7,8 +7,14 @@ const userModel = mongoose.Schema({
   username: String,
   name: String,
   email: String,
+  password: String,
   profileImage: String,
-})
+  bio: String,
+  posts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "post"
+  }]
+});
 
 userModel.plugin(plm);
 
