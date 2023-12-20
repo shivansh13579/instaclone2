@@ -15,12 +15,13 @@ router.get('/', function(req, res) {
   res.render('login', {footer: false});
 });
 
-router.get('/feed',isLoggedIn, function(req, res) {
-  res.render('feed', {footer: true});
+router.get('/feed',isLoggedIn,async function(req, res) {
+  const posts =await postModel.find().populate("user");
+  res.render('feed', {footer: true, posts});
 });
 
 router.get('/profile',isLoggedIn,async function(req, res) {
-  const user = await userModel.findOne({username: req.session.passport.user})
+  const user = await userModel.findOne({username: req.session.passport.user}).populate("posts");
   res.render('profile', {footer: true, user});
 });
 
@@ -35,6 +36,11 @@ router.get('/edit',isLoggedIn,async function(req, res) {
 
 router.get('/upload',isLoggedIn ,function(req, res) {
   res.render('upload', {footer: true});
+});
+
+router.get('/username/:username',isLoggedIn,async function(req, res) {
+  const regex = await new RegExp(`^${req.params.username}`, 'i');
+  await userModel.findOne({username: regex}) 
 });
 
 router.post('/register',function(req,res){
@@ -95,6 +101,10 @@ router.post("/upload",isLoggedIn,upload.single("image"),async function(req,res){
       user: user._id,
       caption:req.body.caption,
     })
+
+    user.posts.push(post._id);
+    await user.save();
+    res.redirect("/feed");
 });
 
 module.exports = router;
